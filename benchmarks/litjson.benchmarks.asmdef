@@ -1,0 +1,15 @@
+{
+    "name": "litjson.benchmarks",
+    "references": [],
+    "optionalUnityReferences": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "LITJSON_BENCHMARKS"
+    ],
+    "versionDefines": []
+}

@@ -1,0 +1,23 @@
+fileFormatVersion: 2
+guid: 2715a65504bcc934dadb5f9b7124cc05
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 305d72b64a2242c0b6ff1d70a6bc89f4, type: 3}
+  name: games.artees.litjson
+  version: 0.13.0+unity.1
+  displayName: LitJSON
+  description: 'A fork of LitJSON compatible with the Unity Package Manager. The original
+    library: https://litjson.net/'
+  unity: 2019.1
+  unityRelease: 
+  keywords: []
+  author:
+    name: Artees
+    email: yo@artees.games
+    url: https://github.com/Artees/litjson
+  autoExportJson: 1
