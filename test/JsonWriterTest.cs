@@ -162,9 +162,7 @@ namespace LitJson.Test
         {
             TextWriter text_writer = null;
 
-            Assert.Throws<ArgumentNullException>(() => {
-                JsonWriter writer = new JsonWriter (text_writer);
-            });
+            Assert.Throws<ArgumentNullException>(() => { new JsonWriter (text_writer); });
         }
 
         [Test]

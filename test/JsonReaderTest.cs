@@ -14,6 +14,9 @@ using NUnit.Framework;
 using System;
 using System.IO;
 using System.Reflection;
+#if UNITY_EDITOR
+using UnityEngine;
+#endif
 
 
 namespace LitJson.Test
@@ -159,9 +162,13 @@ namespace LitJson.Test
         [Test]
         public void FromFileTest ()
         {
+#if UNITY_EDITOR
+            StreamReader stream = new StreamReader(Application.dataPath + "/litjson/test/json-example.txt");
+#else
             Assembly asmb = typeof (JsonReaderTest).Assembly;
             StreamReader stream = new StreamReader (
                 asmb.GetManifestResourceStream (asmb.GetName().Name + ".json-example.txt"));
+#endif
 
             JsonReader reader = new JsonReader (stream);
 
@@ -283,9 +290,7 @@ namespace LitJson.Test
         {
             TextReader text_reader = null;
 
-            Assert.Throws<ArgumentNullException>(() => {
-                JsonReader reader = new JsonReader (text_reader);
-            });
+            Assert.Throws<ArgumentNullException>(() => { new JsonReader (text_reader); });
         }
 
         [Test]

@@ -17,6 +17,9 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.Reflection;
+#if UNITY_EDITOR
+using UnityEngine;
+#endif
 
 
 namespace LitJson.Test
@@ -468,10 +471,14 @@ namespace LitJson.Test
         {
             JsonData data;
 
+#if UNITY_EDITOR
+            StreamReader stream = new StreamReader(Application.dataPath + "/litjson/test/json-example.txt");
+#else
             Assembly asmb = typeof (JsonMapperTest).Assembly;
 
             StreamReader stream = new StreamReader (
                 asmb.GetManifestResourceStream (asmb.GetName().Name + ".json-example.txt"));
+#endif
 
             using (stream) {
                 data = JsonMapper.ToObject (stream);
