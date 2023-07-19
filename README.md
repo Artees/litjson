@@ -16,10 +16,10 @@ Notation) strings.
 | Build server                | Platform      | Build status                                                                                                                                                   |
 |-----------------------------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | AppVeyor                    | Windows       | [![AppVeyor branch](https://img.shields.io/appveyor/ci/litjson/litjson/develop.svg)](https://ci.appveyor.com/project/litjson/litjson/branch/develop)           |
-| Bitrise                     | MacOS         | [![Build Status](https://www.bitrise.io/app/5975a00ca2666fb1/status.svg?token=OZnv4YWRw71IVax38Wi50Q&branch=develop)](https://www.bitrise.io/app/5975a00ca2666fb1) |
-| Bitrise                     | Linux         | [![Build Status](https://www.bitrise.io/app/4c9ee62c6ba13630/status.svg?token=RBH8UKw-68lQYjageT8VoQ&branch=develop)](https://www.bitrise.io/app/4c9ee62c6ba13630) |
-| Travis                      | Linux / MacOS | [![Travis build status](https://travis-ci.org/LitJSON/litjson.svg?branch=develop)](https://travis-ci.org/LitJSON/litjson)                                      |
-
+| Bitrise                     | MacOS         | [![Build Status](https://app.bitrise.io/app/5975a00ca2666fb1/status.svg?token=OZnv4YWRw71IVax38Wi50Q&branch=develop)](https://app.bitrise.io/app/5975a00ca2666fb1) |
+| Bitrise                     | Linux         | [![Build Status](https://app.bitrise.io/app/4c9ee62c6ba13630/status.svg?token=RBH8UKw-68lQYjageT8VoQ&branch=develop)](https://app.bitrise.io/app/4c9ee62c6ba13630)|
+| Azure Pipelines             | Linux / MacOS / Windows | [![Azure Pipelines Build Status](https://dev.azure.com/LitJSON/litjson/_apis/build/status/LitJSON.litjson?branchName=develop)](https://dev.azure.com/LitJSON/litjson/_build/latest?definitionId=3&branchName=develop) |
+| GitHub Actions              | Linux / MacOS / Windows  |[![Build](https://github.com/LitJSON/litjson/actions/workflows/build.yml/badge.svg?branch=develop)](https://github.com/LitJSON/litjson/actions/workflows/build.yml) |
 
 ## Compiling
 
@@ -40,7 +40,7 @@ Code can be compiled using .NET CLI or by launching the bootstrappers in the roo
 #### Prerequisites
 
 The bootstrappers will (locally in repo)
-  
+
   * Fetch and install .NET Core CLI / SDK version needed to compile LitJSON.
   * Fetch and install Cake runner
   * Execute build script with supplied target (`--target=[Target]`) or by default
@@ -49,7 +49,7 @@ The bootstrappers will (locally in repo)
     1. Build
     1. Run unit tests
     1. Create NuGet package
-  
+
 #### Testing
 
 This library comes with a set of unit tests using the [NUnit][nunit]
@@ -81,6 +81,8 @@ own project's source tree and integrate it with your development environment.
 #### Requirements
 
 LitJSON currently targets and supports
+* .NET 6
+* .NET Standard 2.1
 * .NET Standard 2.0
 * .NET Standard 1.5
 * .NET Framework 4.5 and above
@@ -91,7 +93,7 @@ LitJSON currently targets and supports
 
 #### Prereleases
 
-Each merge to develop is published to our NuGet feed on [MyGet](mygetgallery).
+Each merge to develop is published to our NuGet feed on [MyGet](mygetgallery) and also [GitHub Packages](ghpackages).
 
 ## Contributing
 
@@ -113,3 +115,4 @@ So you’re thinking about contributing to LitJSON? Great! It’s **really** app
 [nunit]: http://www.nunit.org/
 [pkg-config]: http://www.freedesktop.org/wiki/Software/pkg-config
 [unlicense]: http://unlicense.org/
+[ghpackages]: https://github.com/orgs/LitJSON/packages?repo_name=litjson

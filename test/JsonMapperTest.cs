@@ -165,15 +165,16 @@ namespace LitJson.Test
 
     public class ValueTypesTest
     {
-        public byte     TestByte;
-        public char     TestChar;
-        public DateTime TestDateTime;
-        public decimal  TestDecimal;
-        public sbyte    TestSByte;
-        public short    TestShort;
-        public ushort   TestUShort;
-        public uint     TestUInt;
-        public ulong    TestULong;
+        public byte           TestByte;
+        public char           TestChar;
+        public DateTime       TestDateTime;
+        public decimal        TestDecimal;
+        public sbyte          TestSByte;
+        public short          TestShort;
+        public ushort         TestUShort;
+        public uint           TestUInt;
+        public ulong          TestULong;
+        public DateTimeOffset TestDateTimeOffset;
     }
 
     public class NullableTypesTest
@@ -202,6 +203,17 @@ namespace LitJson.Test
     public class NullableEnumTest
     {
         public NullableEnum? TestEnum;
+    }
+
+    class EmptyArrayInJsonDataTest
+    {
+        public int[] array;
+        public string name;
+    }
+
+    class EmptyArrayInJsonDataTestWrapper
+    {
+        public JsonData data = null;
     }
 
     [TestFixture]
@@ -309,6 +321,22 @@ namespace LitJson.Test
         }
 
         [Test]
+        public void ExportEnumDictionaryTest()
+        {
+            Dictionary<Planets, int> planets = new Dictionary<Planets, int>();
+
+            planets.Add(Planets.Jupiter, 5);
+            planets.Add(Planets.Saturn, 6);
+            planets.Add(Planets.Uranus, 7);
+            planets.Add(Planets.Neptune, 8);
+            planets.Add(Planets.Pluto, 9);
+
+            string json = JsonMapper.ToJson(planets);
+
+            Assert.AreEqual("{\"Jupiter\":5,\"Saturn\":6,\"Uranus\":7,\"Neptune\":8,\"Pluto\":9}", json);
+        }
+
+        [Test]
         public void ExportObjectTest ()
         {
             UiSample sample = new UiSample ();
@@ -402,13 +430,17 @@ namespace LitJson.Test
             test.TestUShort   = 30000;
             test.TestUInt     = 90000000;
             test.TestULong    = 0xFFFFFFFFFFFFFFFF; // = =18446744073709551615
+            test.TestDateTimeOffset =
+                new DateTimeOffset(2019, 9, 18, 16, 47,
+                    50, 123, TimeSpan.FromHours(8)).AddTicks(4567);
 
             string json = JsonMapper.ToJson (test);
             string expected =
                 "{\"TestByte\":200,\"TestChar\":\"P\",\"TestDateTime\":" +
                 "\"12/22/2012 00:00:00\",\"TestDecimal\":10.333," +
                 "\"TestSByte\":-5,\"TestShort\":1024,\"TestUShort\":30000" +
-                ",\"TestUInt\":90000000,\"TestULong\":18446744073709551615}";
+                ",\"TestUInt\":90000000,\"TestULong\":18446744073709551615" +
+                ",\"TestDateTimeOffset\":\"2019-09-18T16:47:50.1234567+08:00\"}";
 
             Assert.AreEqual (expected, json);
         }
@@ -832,15 +864,16 @@ namespace LitJson.Test
         {
             string json = @"
 {
-  ""TestByte"":     200,
-  ""TestChar"":     'P',
-  ""TestDateTime"": ""12/22/2012 00:00:00"",
-  ""TestDecimal"":  10.333,
-  ""TestSByte"":    -5,
-  ""TestShort"":    1024,
-  ""TestUShort"":   30000,
-  ""TestUInt"":     90000000,
-  ""TestULong"":    18446744073709551615
+  ""TestByte"":           200,
+  ""TestChar"":           'P',
+  ""TestDateTime"":       ""12/22/2012 00:00:00"",
+  ""TestDecimal"":        10.333,
+  ""TestSByte"":          -5,
+  ""TestShort"":          1024,
+  ""TestUShort"":         30000,
+  ""TestUInt"":           90000000,
+  ""TestULong"":          18446744073709551615,
+  ""TestDateTimeOffset"": ""2019-09-18T16:47:50.1234567+08:00""
 }";
 
             ValueTypesTest test = JsonMapper.ToObject<ValueTypesTest> (json);
@@ -855,6 +888,10 @@ namespace LitJson.Test
             Assert.AreEqual (30000, test.TestUShort, "A7");
             Assert.AreEqual (90000000, test.TestUInt, "A8");
             Assert.AreEqual (18446744073709551615L, test.TestULong, "A9");
+            Assert.AreEqual(
+                new DateTimeOffset(2019, 9, 18, 16, 47,
+                    50, 123, TimeSpan.FromHours(8)).AddTicks(4567),
+                test.TestDateTimeOffset, "A10");
         }
 
         [Test]
@@ -1039,6 +1076,70 @@ namespace LitJson.Test
             value = new NullableEnumTest() { TestEnum = null };
             expectedJson = "{\"TestEnum\":null}";
             Assert.AreEqual(expectedJson, JsonMapper.ToJson(value));
+        }
+
+        [Test]
+        public void EmptyArrayInJsonDataExportTest()
+        {
+            string testJson = @"
+            {
+                ""data"":
+                {
+                    ""array"": [],
+                    ""name"": ""testName""
+                }
+            }";
+
+            var response = JsonMapper.ToObject<EmptyArrayInJsonDataTestWrapper>(testJson);
+            var toJsonResult = response.data.ToJson();
+            string expectedJson = "{\"array\":[],\"name\":\"testName\"}";
+            Assert.AreEqual(toJsonResult, expectedJson);
+        }
+
+        [Test]
+        public void EmptyArrayInJsonDataTest()
+        {
+            var toJsonResult = JsonMapper.ToJson(new EmptyArrayInJsonDataTest {
+                name = "testName",
+                array = new int[0]
+            });
+            string expectedJson = "{\"array\":[],\"name\":\"testName\"}";
+            Assert.AreEqual(toJsonResult, expectedJson);
+        }
+        public enum UshortEnum : ushort
+        {
+            Test = 0,
+        }
+        public enum ShortEnum : short
+        {
+            Test = 0,
+        }
+        public enum ByteEnum : byte
+        {
+            Test = 0,
+        }
+        
+        public enum SbyteEnum : sbyte
+        {
+            Test = 0,
+        }
+            
+        public class EnumWrapper
+        {
+            public UshortEnum ushortEnum;
+            public ShortEnum shortEnum;
+            public ByteEnum byteEnum;
+            public SbyteEnum sbyteEnum;
+        }
+        
+        [Test]
+        public void shortAndByteBasedEnumToJsonTest()
+        {
+            var enumWrapper = new EnumWrapper();
+            Assert.DoesNotThrow(() =>
+            {
+                var json = JsonMapper.ToJson(enumWrapper);
+            });
         }
     }
 }

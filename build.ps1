@@ -1,120 +1,96 @@
-$CakeVersion = "0.25.0"
-$DotNetChannel = "LTS";
-$DotNetVersion = "2.1.4";
-$IsRunningOnUnix = [System.Environment]::OSVersion.Platform -eq [System.PlatformID]::Unix
+#!/usr/bin/env pwsh
+$DotNetInstallerUri = 'https://dot.net/v1/dotnet-install.ps1';
+$DotNetUnixInstallerUri = 'https://dot.net/v1/dotnet-install.sh'
+$PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
 
 # Make sure tools folder exists
-$PSScriptRoot = Split-Path $MyInvocation.MyCommand.Path -Parent
 $ToolPath = Join-Path $PSScriptRoot "tools"
 if (!(Test-Path $ToolPath)) {
     Write-Verbose "Creating tools directory..."
-    New-Item -Path $ToolPath -Type directory | out-null
+    New-Item -Path $ToolPath -Type Directory -Force | out-null
+}
+
+
+if ($PSVersionTable.PSEdition -ne 'Core') {
+    # Attempt to set highest encryption available for SecurityProtocol.
+    # PowerShell will not set this by default (until maybe .NET 4.6.x). This
+    # will typically produce a message for PowerShell v2 (just an info
+    # message though)
+    try {
+        # Set TLS 1.2 (3072), then TLS 1.1 (768), then TLS 1.0 (192), finally SSL 3.0 (48)
+        # Use integers because the enumeration values for TLS 1.2 and TLS 1.1 won't
+        # exist in .NET 4.0, even though they are addressable if .NET 4.5+ is
+        # installed (.NET 4.5 is an in-place upgrade).
+        [System.Net.ServicePointManager]::SecurityProtocol = 3072 -bor 768 -bor 192 -bor 48
+      } catch {
+        Write-Output 'Unable to set PowerShell to use TLS 1.2 and TLS 1.1 due to old .NET Framework installed. If you see underlying connection closed or trust errors, you may need to upgrade to .NET Framework 4.5+ and PowerShell v3'
+      }
 }
 
 ###########################################################################
 # INSTALL .NET CORE CLI
 ###########################################################################
 
+$env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+$env:DOTNET_CLI_TELEMETRY_OPTOUT=1
+$env:DOTNET_ROLL_FORWARD_ON_NO_CANDIDATE_FX=2
+
+
 Function Remove-PathVariable([string]$VariableToRemove)
 {
+    $SplitChar = ';'
+    if ($IsMacOS -or $IsLinux) {
+        $SplitChar = ':'
+    }
+
     $path = [Environment]::GetEnvironmentVariable("PATH", "User")
     if ($path -ne $null)
     {
-        $newItems = $path.Split(';', [StringSplitOptions]::RemoveEmptyEntries) | Where-Object { "$($_)" -inotlike $VariableToRemove }
-        [Environment]::SetEnvironmentVariable("PATH", [System.String]::Join(';', $newItems), "User")
+        $newItems = $path.Split($SplitChar, [StringSplitOptions]::RemoveEmptyEntries) | Where-Object { "$($_)" -inotlike $VariableToRemove }
+        [Environment]::SetEnvironmentVariable("PATH", [System.String]::Join($SplitChar, $newItems), "User")
     }
 
     $path = [Environment]::GetEnvironmentVariable("PATH", "Process")
     if ($path -ne $null)
     {
-        $newItems = $path.Split(';', [StringSplitOptions]::RemoveEmptyEntries) | Where-Object { "$($_)" -inotlike $VariableToRemove }
-        [Environment]::SetEnvironmentVariable("PATH", [System.String]::Join(';', $newItems), "Process")
+        $newItems = $path.Split($SplitChar, [StringSplitOptions]::RemoveEmptyEntries) | Where-Object { "$($_)" -inotlike $VariableToRemove }
+        [Environment]::SetEnvironmentVariable("PATH", [System.String]::Join($SplitChar, $newItems), "Process")
     }
 }
 
-# Get .NET Core CLI path if installed.
-$env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
-$env:DOTNET_CLI_TELEMETRY_OPTOUT=1
-$FoundDotNetCliVersion = $null
-
-
-if (Get-Command dotnet -ErrorAction SilentlyContinue) {
-    $FoundDotNetCliVersion = dotnet --version
+$InstallPath = Join-Path $PSScriptRoot ".dotnet"
+$GlobalJsonPath = Join-Path $PSScriptRoot "global.json"
+if (!(Test-Path $InstallPath)) {
+    New-Item -Path $InstallPath -ItemType Directory -Force | Out-Null;
 }
 
-if($FoundDotNetCliVersion -ne $DotNetVersion)
-{
-    $InstallPath = Join-Path $PSScriptRoot ".dotnet"
+if ($IsMacOS -or $IsLinux) {
+    $ScriptPath = Join-Path $InstallPath 'dotnet-install.sh'
+    (New-Object System.Net.WebClient).DownloadFile($DotNetUnixInstallerUri, $ScriptPath);
+    & bash $ScriptPath --jsonfile "$GlobalJsonPath" --install-dir "$InstallPath" --no-path
+
+    Remove-PathVariable "$InstallPath"
+    $env:PATH = "$($InstallPath):$env:PATH"
+}
+else {
+    $ScriptPath = Join-Path $InstallPath 'dotnet-install.ps1'
+    (New-Object System.Net.WebClient).DownloadFile($DotNetInstallerUri, $ScriptPath);
+    & $ScriptPath -JSonFile $GlobalJsonPath -InstallDir $InstallPath;
+
     Remove-PathVariable "$InstallPath"
     $env:PATH = "$InstallPath;$env:PATH"
-
-    if (!(Test-Path $InstallPath)) {
-        New-Item -ItemType Directory -Force $InstallPath | Out-Null;
-    }
-
-    [string] $InstalledDotNetVersion = Get-ChildItem -Path ./.dotnet -File `
-                                        | Where-Object { $_.Name -eq 'dotnet' -or $_.Name -eq 'dotnet.exe' } `
-                                        | ForEach-Object { &$_.FullName --version }
-
-    if ($InstalledDotNetVersion -eq $DotNetVersion)
-    {
-    }
-    elseif ($IsRunningOnUnix)
-    {
-        $DotNetInstallerUri = "https://raw.githubusercontent.com/dotnet/cli/v2.1.4/scripts/obtain/dotnet-install.sh";
-        (New-Object System.Net.WebClient).DownloadFile($DotNetInstallerUri, "$InstallPath/dotnet-install.sh");
-        sudo bash "$InstallPath/dotnet-install.sh" --version $DotNetVersion --install-dir "$InstallPath" --no-path
-    }
-    else
-    {
-        $DotNetInstallerUri = "https://raw.githubusercontent.com/dotnet/cli/v2.1.4/scripts/obtain/dotnet-install.ps1";
-        (New-Object System.Net.WebClient).DownloadFile($DotNetInstallerUri, "$InstallPath\dotnet-install.ps1");
-        & $InstallPath\dotnet-install.ps1 -Channel $DotNetChannel -Version $DotNetVersion -InstallDir $InstallPath;    
-    }
 }
+$env:DOTNET_ROOT=$InstallPath
 
 ###########################################################################
 # INSTALL CAKE
 ###########################################################################
 
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-Function Unzip
-{
-    param([string]$zipfile, [string]$outpath)
-
-    [System.IO.Compression.ZipFile]::ExtractToDirectory($zipfile, $outpath)
-}
-
-
-# Make sure Cake has been installed.
-$CakePath = Join-Path $ToolPath "Cake.$CakeVersion" 
-$CakeExePath = Join-Path $CakePath "Cake.exe"
-$CakeZipPath = Join-Path $ToolPath "Cake.zip"
-if (!(Test-Path $CakeExePath)) {
-    Write-Host "Installing Cake $CakeVersion..."
-     (New-Object System.Net.WebClient).DownloadFile("https://www.nuget.org/api/v2/package/Cake/$CakeVersion", $CakeZipPath)
-     Unzip $CakeZipPath $CakePath
-     Remove-Item $CakeZipPath
-}
+& dotnet tool restore
 
 ###########################################################################
 # RUN BUILD SCRIPT
 ###########################################################################
-if ($IsRunningOnUnix)
-{
-    & mono "$CakeExePath" --bootstrap
-    if ($LASTEXITCODE -eq 0)
-    {
-        & mono "$CakeExePath" $args
-    }
-    exit $LASTEXITCODE
-}
-else
-{
-    & "$CakeExePath" --bootstrap
-    if ($LASTEXITCODE -eq 0)
-    {
-        & "$CakeExePath" $args
-    }
-    exit $LASTEXITCODE
-}
+& dotnet cake ./build.cake $args
+
+exit $LASTEXITCODE
